@@ -1,0 +1,56 @@
+version: "3.5"
+
+services:
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nknguyengl/php:8.2-fpm-nginx
+    container_name: php
+    environment:
+      - SSL_MODE=off
+      - AUTORUN_LARAVEL_STORAGE_LINK=false
+    volumes:
+      - .:/var/www/html:delegated
+    ports:
+      - 80:80
+    networks:
+      - laravel
+
+  task:
+    image: nknguyengl/php:8.2-fpm-nginx
+    container_name: task
+    command: [ "su", "webuser", "-c", "php artisan schedule:work" ]
+    environment:
+      - SSL_MODE=off
+      - AUTORUN_LARAVEL_STORAGE_LINK=false
+    volumes:
+      - .:/var/www/html:delegated
+    networks:
+      - laravel
+
+  queue:
+    image: nknguyengl/php:8.2-fpm-nginx
+    container_name: queue
+    command: [ "su", "webuser", "-c", "php artisan queue:work --tries=3" ]
+    environment:
+      - SSL_MODE=off
+      - AUTORUN_LARAVEL_STORAGE_LINK=false
+    volumes:
+      - .:/var/www/html:delegated
+    networks:
+      - laravel
+
+  grpc:
+    image: nknguyengl/php:8.2-fpm-nginx
+    container_name: grpc
+    command: [ "./rr", "serve", "--dotenv", ".env" ]
+    volumes:
+      - .:/var/www/html:delegated
+    ports:
+      - 6001:6001
+    networks:
+      - laravel
+
+networks:
+  laravel:
